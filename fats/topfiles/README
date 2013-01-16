@@ -1,0 +1,16 @@
+FATS - FATS a Twisted Fast Asterisk's Telephony Services.
+
+Twisted framework based enhancement. Project contains protocols implementation for 
+the FastAGI and AMI. Allow to make your Asterisk IP-PBX server faster and easy to use.
+
+1) FastAGI protocol - Fast Asterisk Gateway Interface based on the Twisted framework 
+   allow you develop dial plan scripts like a network service. 
+   Clear dial plan logic and unload processor from a hard weight AGI processes.
+
+2) AMI - Asterisk Management Interface. You can create fast and
+   asynchronous application with gtk2, xml-rpc or web2 based interface 
+   for the Asterisk management. Enjoy!
+
+3) Auto test tools. Project contains unit tests and API for easy testing of a custom FATS services. 
+   MockAsterisk and MockDatabase technique allow you develop and debug\test difficult 
+   FastAGIAMI services without real Asterisk IP-PBX server or database.

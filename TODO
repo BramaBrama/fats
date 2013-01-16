@@ -1,0 +1,12 @@
+Wed Oct 17 01:37:30 MSD 2007
+
+* refactorize test.asterisk module. Pass AGI test case to the test_fastagi or
+combine equal methods with ami protocol test case.
+
+* create test for the mock asterisk tool and add methods for the ami fabrication.
+
+* create tests for the ami protocol implementation and create stable lineReceived method
+after these.
+
+* refactorize service module, AGIFactory and test case for her. 
+Create stable AMIFactory and usefull wrapper for her, like a getPage method.

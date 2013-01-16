@@ -1,0 +1,140 @@
+#!/usr/bin/env python
+# Copyright (c) 2001-2004 Twisted Matrix Laboratories.
+# See LICENSE for details.
+
+
+from __future__ import nested_scopes
+
+### Twisted Preamble
+# This makes sure that users don't have to set up their environment
+# specially in order to run these programs from bin/.
+
+import sys, os, string
+if string.find(os.path.abspath(sys.argv[0]), os.sep+'Twisted') != -1:
+    sys.path.insert(0, os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]), os.pardir, os.pardir)))
+sys.path.insert(0, os.curdir)
+### end of preamble
+
+from twisted.python import usage, dist, reflect
+from twisted.python.release import runChdirSafe, sh, DirectoryExists, DirectoryDoesntExist
+
+import glob
+
+packaged_projects = ['fats']
+
+def makeCommands():
+    return {
+        'exportTemp': exportTemp,
+        'makeDocFats': makeMakeDoc('fats'),
+        'makeBallFats': makeMakeBall('fats')
+        }
+
+
+class Options(usage.Options):
+    optParameters = [
+        ['commands', None, 'exportTemp,makeDocFats,makeBallFats',
+         "(optional) Comma-separated list of individual steps to run"],
+        ['release-source', None, '/trunk',
+         "SVN path to be released."],
+        ['sumo-version', None, None,
+         "Version of Twisted (affects tarball/directory name)"],
+        ]
+
+
+    _desc = """
+Things appropriate for --commands are:
+
+%s
+
+Generally, the release manager will want to run this from a checkout
+of a branch of Twisted that has been given version numbers with
+admin/change-versions.
+"""
+
+    longdesc = property(lambda s: s._desc
+                        % ', '.join(sorted(ALL_COMMANDS)))
+
+    def postOptions(self):
+        commands = self['commands'].split(',')
+        commands = [ALL_COMMANDS[x] for x in commands]
+        self['commands'] = commands
+        print "GOING TO DO", ','.join([x.__name__ for x in commands])
+
+
+def main():
+    try:
+        opts = Options()
+        opts.parseOptions()
+    except usage.UsageError, ue:
+        print "%s: %s (see --help)" % (sys.argv[0], ue)
+        sys.exit(2)
+
+    for command in opts['commands']:
+        print
+        print command.__name__
+        print "="*len(command.__name__)
+        runChdirSafe(command, opts)
+
+
+def apidoc(ver, proj_name):
+    sh("pydoctor --add-package=%(proj_dir)s "
+       "--project-name=%(proj_name)s --make-html "
+       "--html-output=doc/%(proj)s/apidocs"
+       % {'proj_dir': os.path.abspath(proj_name),
+          'proj_name': 'Twisted%s-%s'%(proj_name.capitalize(), ver),
+          'proj': proj_name})
+
+def tar(tdir):
+    sh('find %(tdir)s -name "*.pyc" | xargs rm -f' % locals())
+    sh('tar cjhf %(tdir)s.tar.bz2 %(tdir)s' % locals())
+    
+
+def exportTemp(opts):
+    if os.path.exists('Twisted.exp'):
+        raise DirectoryExists("ExportTemp: 'Twisted.exp' already exists")
+    sh('svn export . Twisted.exp')
+
+
+def makeMakeDoc(projname):
+    def makeDoc(opts):
+        os.chdir('Twisted.exp')        
+        if os.path.exists(projname):
+            apidoc(dist.getVersion(projname, base='.'), projname)
+    return makeDoc
+
+
+def createSubprojectDirectory(proj, version):
+    if not os.path.exists('Twisted.exp'):
+        raise DirectoryDoesntExist("MakeBalls: Twisted.exp doesn't exist")
+    
+    sdir = 'Twisted%s-%s' % (proj.capitalize(), version)
+    os.makedirs(sdir+'/twisted/%s' % (proj,))
+
+
+    sh("""
+    ln -s `pwd`/Twisted.exp/%(proj)s/* %(sdir)s/twisted/%(proj)s
+    rm %(sdir)s/twisted/%(proj)s/topfiles
+    ln -s `pwd`/Twisted.exp/LICENSE %(sdir)s
+    ln -s `pwd`/Twisted.exp/%(proj)s/topfiles/* %(sdir)s
+    """ % locals())
+    
+    if os.path.exists('Twisted.exp/doc/'+proj):
+        sh('ln -s `pwd`/Twisted.exp/doc/%(proj)s %(sdir)s/doc' % locals())
+    if os.path.exists('Twisted.exp/'+proj+'/examples'):
+        sh('ln -s `pwd`/Twisted.exp/%(proj)s/examples %(sdir)s/doc' % locals())
+                    
+
+def makeMakeBall(proj):
+    def makeBall(opts):
+        projver = dist.getVersion(proj, base='.')
+        projdir = 'Twisted%s-%s' % (proj.capitalize(), projver,)
+        createSubprojectDirectory(proj, projver)
+        tar(projdir)
+    return makeBall
+
+
+ALL_COMMANDS = makeCommands()
+
+if __name__=='__main__':
+    main()
+
