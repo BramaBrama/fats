@@ -1,3 +1,7 @@
+[![Code Climate](https://codeclimate.com/github/BramaBrama/fats/badges/gpa.svg)](https://codeclimate.com/github/BramaBrama/fats)
+
+[![Test Coverage](https://codeclimate.com/github/BramaBrama/fats/badges/coverage.svg)](https://codeclimate.com/github/BramaBrama/fats/coverage)
+
 fats
 ====
 
